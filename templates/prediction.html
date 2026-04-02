@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Crop Prediction — AgroIntel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{--green:#2d6a4f;--lime:#95d5b2;--gold:#d4a017;--cream:#f8f4ec;--dark:#1a1a2e}
+    body{font-family:'DM Sans',sans-serif;background:var(--cream);min-height:100vh}
+
+    /* ── NAV ── */
+    nav{display:flex;justify-content:space-between;align-items:center;padding:1.2rem 4rem;background:#fff;border-bottom:1px solid #eee;position:sticky;top:0;z-index:10}
+    .logo{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900}
+    .logo .agro{color:var(--green)}
+    .logo .intel{color:var(--gold)}
+    .nav-links{display:flex;gap:1.5rem;list-style:none}
+    .nav-links a{text-decoration:none;color:#555;font-size:0.9rem;font-weight:500;transition:color 0.2s}
+    .nav-links a:hover{color:var(--green)}
+    .nav-badge{background:rgba(45,106,79,0.1);color:var(--green);padding:0.35rem 1rem;border-radius:50px;font-size:0.8rem;font-weight:500}
+
+    /* ── LAYOUT ── */
+    .page-wrap{display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 65px);gap:0}
+
+    /* ── SIDEBAR ── */
+    .sidebar{background:#fff;border-right:1px solid #eee;padding:2rem 1.5rem;position:sticky;top:65px;height:calc(100vh - 65px);overflow-y:auto}
+    .sidebar-title{font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:#aaa;margin-bottom:1rem;font-weight:600}
+    .range-item{display:flex;justify-content:space-between;align-items:center;padding:0.65rem 0.9rem;border-radius:10px;margin-bottom:0.4rem;transition:background 0.2s}
+    .range-item:hover{background:var(--cream)}
+    .range-param{font-size:0.85rem;font-weight:500;color:var(--dark)}
+    .range-val{font-size:0.78rem;color:#888;background:#f5f5f5;padding:0.2rem 0.6rem;border-radius:6px}
+    .range-item.active-field{background:rgba(45,106,79,0.08);border-left:3px solid var(--green)}
+    .range-item.active-field .range-param{color:var(--green);font-weight:600}
+    .sidebar-divider{height:1px;background:#f0f0f0;margin:1.2rem 0}
+    .sidebar-note{font-size:0.78rem;color:#888;line-height:1.6;padding:0.8rem;background:var(--cream);border-radius:10px}
+
+    /* ── MAIN ── */
+    .main{padding:2.5rem 3rem;max-width:780px}
+    .page-header{margin-bottom:2.5rem}
+    .page-header h1{font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:900;color:var(--dark);margin-bottom:0.5rem}
+    .page-header p{color:#666;font-size:0.95rem;line-height:1.6}
+
+    /* ── FORM CARD ── */
+    .form-card{background:#fff;border-radius:20px;padding:2.2rem;box-shadow:0 2px 20px rgba(0,0,0,0.07);margin-bottom:1.5rem}
+    .form-section{margin-bottom:1.8rem}
+    .section-title{font-size:0.75rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--green);font-weight:700;margin-bottom:1.1rem;display:flex;align-items:center;gap:0.5rem;padding-bottom:0.6rem;border-bottom:1px solid #f0f0f0}
+    .fields-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+    .fields-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+
+    /* ── FIELDS ── */
+    .field{position:relative}
+    .field label{display:block;font-size:0.8rem;color:#444;margin-bottom:0.4rem;font-weight:600}
+    .field label .range-tag{color:#aaa;font-weight:400;font-size:0.72rem;margin-left:0.3rem}
+    .field input{width:100%;border:2px solid #eee;border-radius:10px;padding:0.75rem 1rem;font-size:0.92rem;font-family:'DM Sans',sans-serif;outline:none;transition:all 0.2s;background:#fafafa;color:var(--dark)}
+    .field input:focus{border-color:var(--green);background:#fff;box-shadow:0 0 0 3px rgba(45,106,79,0.08)}
+    .field input.error{border-color:#dc2626;background:#fff5f5;box-shadow:0 0 0 3px rgba(220,38,38,0.08)}
+    .field input.valid{border-color:#16a34a;background:#f0fdf4}
+    .field .hint{font-size:0.7rem;color:#bbb;margin-top:0.3rem}
+    .field .err-msg{font-size:0.7rem;color:#dc2626;margin-top:0.3rem;display:none;font-weight:500}
+    .field .err-msg.show{display:block}
+
+    /* ── SUBMIT ── */
+    .submit-row{display:flex;justify-content:center;padding-top:0.5rem}
+    .submit-btn{background:var(--green);color:#fff;border:none;padding:0.95rem 3rem;border-radius:50px;font-size:1rem;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.25s;box-shadow:0 4px 20px rgba(45,106,79,0.3);display:flex;align-items:center;gap:0.6rem}
+    .submit-btn:hover{background:#1b4332;transform:translateY(-2px);box-shadow:0 8px 30px rgba(45,106,79,0.4)}
+
+    /* ── ALERTS ── */
+    .alert-error{background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2);color:#dc2626;border-radius:10px;padding:0.85rem 1.2rem;font-size:0.88rem;margin-bottom:1.5rem}
+    .form-error-banner{background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2);color:#dc2626;border-radius:10px;padding:0.85rem 1.2rem;font-size:0.88rem;margin-bottom:1.2rem;display:none}
+    .form-error-banner.show{display:block}
+
+    @media(max-width:900px){
+      .page-wrap{grid-template-columns:1fr}
+      .sidebar{display:none}
+      .main{padding:1.5rem}
+      .fields-grid{grid-template-columns:1fr 1fr}
+      nav{padding:1rem 1.5rem}
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo"><span class="agro">Agro</span><span class="intel">Intel</span></div>
+  <ul class="nav-links">
+    <li><a href="/index">Dashboard</a></li>
+    <li><a href="/about">About</a></li>
+    <li><a href="/logout">Logout</a></li>
+  </ul>
+  <div class="nav-badge">🌾 Crop Prediction</div>
+</nav>
+
+<div class="page-wrap">
+
+  <!-- ── SIDEBAR: Valid Ranges ── -->
+  <aside class="sidebar">
+    <div class="sidebar-title">Valid Input Ranges</div>
+
+    <div class="range-item" id="ref-N">
+      <span class="range-param">Nitrogen (N)</span>
+      <span class="range-val">0 – 140 kg/ha</span>
+    </div>
+    <div class="range-item" id="ref-P">
+      <span class="range-param">Phosphorus (P)</span>
+      <span class="range-val">5 – 145 kg/ha</span>
+    </div>
+    <div class="range-item" id="ref-K">
+      <span class="range-param">Potassium (K)</span>
+      <span class="range-val">5 – 205 kg/ha</span>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="range-item" id="ref-temperature">
+      <span class="range-param">Temperature</span>
+      <span class="range-val">8 – 44 °C</span>
+    </div>
+    <div class="range-item" id="ref-humidity">
+      <span class="range-param">Humidity</span>
+      <span class="range-val">14 – 100 %</span>
+    </div>
+    <div class="range-item" id="ref-rainfall">
+      <span class="range-param">Rainfall</span>
+      <span class="range-val">20 – 300 mm</span>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="range-item" id="ref-ph">
+      <span class="range-param">Soil pH</span>
+      <span class="range-val">3.5 – 9.5</span>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-note">
+      💡 Values outside these ranges will be highlighted in red and the form will not submit until corrected.
+    </div>
+  </aside>
+
+  <!-- ── MAIN FORM ── -->
+  <div class="main">
+    <div class="page-header">
+      <h1>Crop Recommendation</h1>
+      <p>Enter your soil and climate parameters below. The system will recommend the most suitable crop based on your farm's conditions using our Federated Learning MLP model.</p>
+    </div>
+
+    {% if error %}<div class="alert-error">❌ {{ error }}</div>{% endif %}
+
+    <div class="form-error-banner" id="formErrorBanner">
+      ❌ Please fix the highlighted fields before submitting.
+    </div>
+
+    <div class="form-card">
+      <form action="/predict" method="POST" id="predForm">
+
+        <!-- Soil Nutrients -->
+        <div class="form-section">
+          <div class="section-title">🧪 Soil Nutrients</div>
+          <div class="fields-grid">
+            <div class="field">
+              <label>Nitrogen (N) <span class="range-tag">(0 – 140)</span></label>
+              <input type="number" id="N" name="N" placeholder="e.g. 90" step="any" required data-min="0" data-max="140"/>
+              <div class="hint">Nitrogen ratio in soil</div>
+              <div class="err-msg" id="err-N">Must be between 0 and 140</div>
+            </div>
+            <div class="field">
+              <label>Phosphorus (P) <span class="range-tag">(5 – 145)</span></label>
+              <input type="number" id="P" name="P" placeholder="e.g. 42" step="any" required data-min="5" data-max="145"/>
+              <div class="hint">Phosphorus ratio in soil</div>
+              <div class="err-msg" id="err-P">Must be between 5 and 145</div>
+            </div>
+            <div class="field">
+              <label>Potassium (K) <span class="range-tag">(5 – 205)</span></label>
+              <input type="number" id="K" name="K" placeholder="e.g. 43" step="any" required data-min="5" data-max="205"/>
+              <div class="hint">Potassium ratio in soil</div>
+              <div class="err-msg" id="err-K">Must be between 5 and 205</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Climate Conditions -->
+        <div class="form-section">
+          <div class="section-title">🌡️ Climate Conditions</div>
+          <div class="fields-grid">
+            <div class="field">
+              <label>Temperature <span class="range-tag">(8 – 44 °C)</span></label>
+              <input type="number" id="temperature" name="temperature" placeholder="e.g. 25.5" step="any" required data-min="8" data-max="44"/>
+              <div class="hint">Average temperature in °C</div>
+              <div class="err-msg" id="err-temperature">Must be between 8 and 44</div>
+            </div>
+            <div class="field">
+              <label>Humidity <span class="range-tag">(14 – 100 %)</span></label>
+              <input type="number" id="humidity" name="humidity" placeholder="e.g. 80" step="any" required data-min="14" data-max="100"/>
+              <div class="hint">Relative humidity in %</div>
+              <div class="err-msg" id="err-humidity">Must be between 14 and 100</div>
+            </div>
+            <div class="field">
+              <label>Rainfall <span class="range-tag">(20 – 300 mm)</span></label>
+              <input type="number" id="rainfall" name="rainfall" placeholder="e.g. 200" step="any" required data-min="20" data-max="300"/>
+              <div class="hint">Annual rainfall in mm</div>
+              <div class="err-msg" id="err-rainfall">Must be between 20 and 300</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Soil Properties -->
+        <div class="form-section">
+          <div class="section-title">⚗️ Soil Properties</div>
+          <div class="fields-grid-2">
+            <div class="field">
+              <label>Soil pH <span class="range-tag">(3.5 – 9.5)</span></label>
+              <input type="number" id="ph" name="ph" placeholder="e.g. 6.5" step="any" required data-min="3.5" data-max="9.5"/>
+              <div class="hint">Soil acidity / alkalinity level</div>
+              <div class="err-msg" id="err-ph">Must be between 3.5 and 9.5</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="submit-row">
+          <button type="submit" class="submit-btn" id="submitBtn">
+            <span>🌱</span> Get Crop Recommendation
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const fields = [
+    { id: "N",           min: 0,   max: 140  },
+    { id: "P",           min: 5,   max: 145  },
+    { id: "K",           min: 5,   max: 205  },
+    { id: "temperature", min: 8,   max: 44   },
+    { id: "humidity",    min: 14,  max: 100  },
+    { id: "rainfall",    min: 20,  max: 300  },
+    { id: "ph",          min: 3.5, max: 9.5  },
+  ];
+
+  function validateField(field) {
+    const input  = document.getElementById(field.id);
+    const errMsg = document.getElementById("err-" + field.id);
+    const ref    = document.getElementById("ref-" + field.id);
+    const val    = parseFloat(input.value);
+
+    if (input.value === "") {
+      input.classList.remove("error", "valid");
+      errMsg.classList.remove("show");
+      if(ref) ref.classList.remove("active-field");
+      return true;
+    }
+
+    if (isNaN(val) || val < field.min || val > field.max) {
+      input.classList.add("error");
+      input.classList.remove("valid");
+      errMsg.textContent = `Must be between ${field.min} and ${field.max}`;
+      errMsg.classList.add("show");
+      if(ref) ref.classList.add("active-field");
+      return false;
+    } else {
+      input.classList.add("valid");
+      input.classList.remove("error");
+      errMsg.classList.remove("show");
+      if(ref) ref.classList.remove("active-field");
+      return true;
+    }
+  }
+
+  fields.forEach(field => {
+    const input = document.getElementById(field.id);
+    input.addEventListener("input", () => validateField(field));
+    input.addEventListener("blur",  () => validateField(field));
+    // Highlight sidebar range on focus
+    input.addEventListener("focus", () => {
+      const ref = document.getElementById("ref-" + field.id);
+      if(ref) ref.classList.add("active-field");
+    });
+    input.addEventListener("blur", () => {
+      if(validateField(field)) {
+        const ref = document.getElementById("ref-" + field.id);
+        if(ref) ref.classList.remove("active-field");
+      }
+    });
+  });
+
+  document.getElementById("predForm").addEventListener("submit", function(e) {
+    let allValid = true;
+    fields.forEach(field => {
+      const input  = document.getElementById(field.id);
+      const errMsg = document.getElementById("err-" + field.id);
+      const val    = parseFloat(input.value);
+      if (input.value === "" || isNaN(val) || val < field.min || val > field.max) {
+        input.classList.add("error");
+        input.classList.remove("valid");
+        errMsg.textContent = `Must be between ${field.min} and ${field.max}`;
+        errMsg.classList.add("show");
+        allValid = false;
+      }
+    });
+    if (!allValid) {
+      e.preventDefault();
+      document.getElementById("formErrorBanner").classList.add("show");
+      document.querySelector(".field input.error").scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  });
+</script>
+
+</body>
+</html>

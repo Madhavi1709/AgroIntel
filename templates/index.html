@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard — AgroIntel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{--green:#2d6a4f;--lime:#95d5b2;--gold:#d4a017;--cream:#f8f4ec;--dark:#1a1a2e}
+    body{font-family:'DM Sans',sans-serif;background:var(--cream);display:flex;min-height:100vh}
+    .sidebar{width:260px;background:var(--dark);color:#fff;padding:2rem 1.5rem;display:flex;flex-direction:column;flex-shrink:0;position:fixed;height:100vh;overflow-y:auto}
+    .sidebar-logo{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;color:#fff;margin-bottom:0.3rem}
+    .sidebar-logo span{color:var(--gold)}
+    .sidebar-sub{font-size:0.75rem;color:rgba(255,255,255,0.4);margin-bottom:2.5rem}
+    .nav-section{font-size:0.7rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:0.8rem;margin-top:1.5rem}
+    .nav-item{display:flex;align-items:center;gap:0.8rem;padding:0.75rem 1rem;border-radius:12px;text-decoration:none;color:rgba(255,255,255,0.7);font-size:0.9rem;transition:all 0.2s;margin-bottom:0.3rem}
+    .nav-item:hover,.nav-item.active{background:rgba(255,255,255,0.1);color:#fff}
+    .nav-item.active{background:var(--green);color:#fff}
+    .nav-icon{font-size:1.1rem;width:24px;text-align:center}
+    .user-card{background:rgba(255,255,255,0.07);border-radius:14px;padding:1rem;margin-bottom:1.5rem}
+    .user-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--green),var(--lime));display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:1rem;margin-bottom:0.6rem}
+    .user-name{font-size:0.9rem;font-weight:600;color:#fff}
+    .user-tag{font-size:0.72rem;color:rgba(255,255,255,0.4)}
+    .sidebar-bottom{margin-top:auto;padding-top:2rem;border-top:1px solid rgba(255,255,255,0.08)}
+    .logout-btn{display:flex;align-items:center;gap:0.8rem;padding:0.75rem 1rem;border-radius:12px;text-decoration:none;color:rgba(255,255,255,0.5);font-size:0.9rem;transition:all 0.2s}
+    .logout-btn:hover{color:#fff;background:rgba(220,38,38,0.2)}
+    .main{margin-left:260px;flex:1;padding:2.5rem}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:2.5rem}
+    .page-title{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--dark)}
+    .page-sub{color:#888;font-size:0.9rem;margin-top:0.2rem}
+    .date-badge{background:#fff;padding:0.5rem 1.2rem;border-radius:50px;font-size:0.82rem;color:#666;box-shadow:0 2px 10px rgba(0,0,0,0.06)}
+    .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;margin-bottom:2.5rem}
+    .stat-card{background:#fff;border-radius:20px;padding:1.5rem;box-shadow:0 2px 15px rgba(0,0,0,0.06);transition:transform 0.2s;border-bottom:4px solid transparent}
+    .stat-card:hover{transform:translateY(-3px)}
+    .stat-card.c1{border-bottom-color:var(--green)}
+    .stat-card.c2{border-bottom-color:var(--gold)}
+    .stat-card.c3{border-bottom-color:#3b82f6}
+    .stat-card.c4{border-bottom-color:var(--lime)}
+    .stat-icon{font-size:1.8rem;margin-bottom:0.8rem}
+    .stat-value{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--dark)}
+    .stat-label{font-size:0.82rem;color:#888;margin-top:0.2rem}
+    .stat-badge{display:inline-block;background:rgba(45,106,79,0.1);color:var(--green);padding:0.2rem 0.6rem;border-radius:50px;font-size:0.72rem;font-weight:500;margin-top:0.5rem}
+    .cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+    .action-card{background:#fff;border-radius:20px;padding:2rem;box-shadow:0 2px 15px rgba(0,0,0,0.06);transition:all 0.3s;text-decoration:none;color:inherit;display:block;position:relative;overflow:hidden}
+    .action-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
+    .action-card.green::before{background:linear-gradient(90deg,var(--green),var(--lime))}
+    .action-card.gold::before{background:linear-gradient(90deg,var(--gold),#f4d03f)}
+    .action-card.blue::before{background:linear-gradient(90deg,#3b82f6,#93c5fd)}
+    .action-card:hover{transform:translateY(-5px);box-shadow:0 10px 30px rgba(0,0,0,0.12)}
+    .action-icon{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin-bottom:1.2rem}
+    .action-icon.green{background:rgba(45,106,79,0.1)}
+    .action-icon.gold{background:rgba(212,160,23,0.1)}
+    .action-icon.blue{background:rgba(59,130,246,0.1)}
+    .action-card h3{font-size:1.05rem;font-weight:600;margin-bottom:0.5rem;color:var(--dark)}
+    .action-card p{font-size:0.85rem;color:#888;line-height:1.6}
+    .action-arrow{display:inline-block;margin-top:1rem;color:var(--green);font-size:0.88rem;font-weight:500}
+    .alert-success{background:rgba(45,106,79,0.1);border:1px solid rgba(45,106,79,0.2);color:var(--green);border-radius:12px;padding:0.85rem 1.2rem;font-size:0.9rem;margin-bottom:1.5rem}
+    .alert-error{background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.2);color:#dc2626;border-radius:12px;padding:0.85rem 1.2rem;font-size:0.9rem;margin-bottom:1.5rem}
+  </style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo"><span style="color:#fff">Agro</span><span style="color:var(--gold)">Intel</span></div>
+  <div class="sidebar-sub">AgroIntel — Deep Learning for Smart Crop Recommendation</div>
+
+  <div class="user-card">
+    <div class="user-avatar">{{ username[0].upper() if username else 'U' }}</div>
+    <div class="user-name">{{ name if name else username }}</div>
+    <div class="user-tag">🌱 Farmer Account</div>
+  </div>
+
+  <div class="nav-section">Main</div>
+  <a href="/index" class="nav-item active"><span class="nav-icon">🏠</span> Dashboard</a>
+  <a href="/prediction" class="nav-item"><span class="nav-icon">🌾</span> Crop Prediction</a>
+  <div class="nav-section">Info</div>
+  <a href="/about" class="nav-item"><span class="nav-icon">ℹ️</span> About</a>
+  <a href="/" class="nav-item"><span class="nav-icon">🌐</span> Home Page</a>
+
+  <div class="sidebar-bottom">
+    <a href="/logout" class="logout-btn"><span>🚪</span> Logout</a>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub">Welcome back, {{ name if name else username }}! Ready to grow smarter?</div>
+    </div>
+    <div class="date-badge">🌱 AgroIntel Portal</div>
+  </div>
+
+  {% if train_success %}
+  <div class="alert-success">✅ Federated training launched successfully in background terminals!</div>
+  {% endif %}
+  {% if train_error %}
+  <div class="alert-error">❌ Training error: {{ train_error }}</div>
+  {% endif %}
+
+  <div class="stats-grid">
+    <div class="stat-card c1"><div class="stat-icon">🌾</div><div class="stat-value">22</div><div class="stat-label">Crop Classes</div><div class="stat-badge">Supported</div></div>
+    <div class="stat-card c2"><div class="stat-icon">🤖</div><div class="stat-value">98%</div><div class="stat-label">FL Accuracy</div><div class="stat-badge">10 Rounds</div></div>
+    <div class="stat-card c3"><div class="stat-icon">👥</div><div class="stat-value">3</div><div class="stat-label">FL Clients</div><div class="stat-badge">FedAvg</div></div>
+    <div class="stat-card c4"><div class="stat-icon">🔒</div><div class="stat-value">100%</div><div class="stat-label">Data Privacy</div><div class="stat-badge">Local Only</div></div>
+  </div>
+
+  <div class="cards-grid">
+    <a href="/prediction" class="action-card green">
+      <div class="action-icon green">🌱</div>
+      <h3>Crop Recommendation</h3>
+      <p>Enter your soil parameters to get an instant AI-powered crop recommendation.</p>
+      <div class="action-arrow">Get Prediction →</div>
+    </a>
+    <a href="/about" class="action-card gold">
+      <div class="action-icon gold">📊</div>
+      <h3>About the Project</h3>
+      <p>Learn about federated learning, our MLP model architecture and how privacy is preserved.</p>
+      <div class="action-arrow">Learn More →</div>
+    </a>
+    <a href="/train" class="action-card blue">
+      <div class="action-icon blue">⚡</div>
+      <h3>Start FL Training</h3>
+      <p>Launch federated training across all 3 client nodes with the global FL server.</p>
+      <div class="action-arrow">Start Training →</div>
+    </a>
+  </div>
+</main>
+</body>
+</html>

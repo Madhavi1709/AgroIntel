@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>About — AgroIntel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{--green:#2d6a4f;--lime:#95d5b2;--gold:#d4a017;--cream:#f8f4ec;--dark:#1a1a2e}
+    body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--dark)}
+    nav{display:flex;justify-content:space-between;align-items:center;padding:1.2rem 4rem;background:#fff;border-bottom:1px solid #eee;position:sticky;top:0;z-index:10}
+    .logo{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;color:var(--green)}
+    .logo span{color:var(--gold)}
+    .nav-links{display:flex;gap:1.5rem;list-style:none}
+    .nav-links a{text-decoration:none;color:#555;font-size:0.9rem;transition:color 0.2s}
+    .nav-links a:hover{color:var(--green)}
+    .hero{background:var(--dark);color:#fff;padding:5rem 4rem;text-align:center;position:relative;overflow:hidden}
+    .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 60% at 50% 50%,rgba(45,106,79,0.3) 0%,transparent 70%)}
+    .hero-tag{display:inline-block;background:rgba(149,213,178,0.15);color:var(--lime);padding:0.4rem 1rem;border-radius:50px;font-size:0.8rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:1.2rem;position:relative}
+    .hero h1{font-family:'Playfair Display',serif;font-size:clamp(2.5rem,5vw,4rem);font-weight:900;position:relative;margin-bottom:1rem}
+    .hero p{color:rgba(255,255,255,0.6);font-size:1.05rem;line-height:1.7;max-width:600px;margin:0 auto;position:relative}
+    .section{padding:5rem 4rem;max-width:1100px;margin:0 auto}
+    .section-label{font-size:0.8rem;letter-spacing:2px;text-transform:uppercase;color:var(--green);margin-bottom:0.8rem}
+    .section h2{font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:700;margin-bottom:2rem}
+    .tech-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-bottom:3rem}
+    .tech-card{background:#fff;border-radius:20px;padding:2rem;box-shadow:0 2px 15px rgba(0,0,0,0.06);border-top:4px solid var(--green);transition:transform 0.2s}
+    .tech-card:hover{transform:translateY(-4px)}
+    .tech-icon{font-size:2rem;margin-bottom:1rem}
+    .tech-card h3{font-size:1rem;font-weight:600;margin-bottom:0.6rem}
+    .tech-card p{font-size:0.85rem;color:#666;line-height:1.7}
+    .pipeline{display:flex;overflow-x:auto;margin-bottom:3rem;border-radius:16px;overflow:hidden;box-shadow:0 2px 15px rgba(0,0,0,0.06)}
+    .pipe-step{flex:1;background:#fff;padding:1.5rem;border-right:1px solid #f0f0f0;min-width:150px}
+    .pipe-step:last-child{border-right:none}
+    .pipe-num{font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:var(--lime);margin-bottom:0.5rem}
+    .pipe-step h4{font-size:0.9rem;font-weight:600;margin-bottom:0.4rem}
+    .pipe-step p{font-size:0.78rem;color:#888;line-height:1.5}
+    .metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;margin-bottom:3rem}
+    .metric-card{background:var(--dark);color:#fff;border-radius:20px;padding:2rem;text-align:center}
+    .metric-val{font-family:'Playfair Display',serif;font-size:2.5rem;font-weight:900;color:var(--lime)}
+    .metric-label{font-size:0.82rem;color:rgba(255,255,255,0.5);margin-top:0.3rem}
+    table{width:100%;border-collapse:collapse;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 15px rgba(0,0,0,0.06)}
+    th{background:var(--green);color:#fff;padding:0.9rem 1.2rem;text-align:left;font-size:0.85rem;font-weight:500}
+    td{padding:0.85rem 1.2rem;font-size:0.88rem;color:#444;border-bottom:1px solid #f0f0f0}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:#fafafa}
+    footer{text-align:center;padding:2rem;font-size:0.82rem;color:#999;border-top:1px solid #eee;margin-top:2rem}
+    @media(max-width:900px){.tech-grid{grid-template-columns:1fr}.metrics-grid{grid-template-columns:1fr 1fr}.section{padding:3rem 2rem}nav{padding:1rem 1.5rem}}
+  </style>
+</head>
+<body>
+<nav>
+  <div class="logo">AgroIntel</div>
+  <ul class="nav-links">
+    <li><a href="/index">Dashboard</a></li>
+    <li><a href="/prediction">Predict</a></li>
+    <li><a href="/logout">Logout</a></li>
+  </ul>
+</nav>
+
+<div class="hero">
+  <div class="hero-tag">About the Project</div>
+  <h1>Crop Recommendation<br>using Federated Learning</h1>
+  <p>A privacy-preserving deep learning system that trains across distributed farm clients to recommend the best crops without centralizing sensitive agricultural data.</p>
+</div>
+
+<div class="section">
+  <div class="section-label">Technology Stack</div>
+  <h2>Core Technologies</h2>
+  <div class="tech-grid">
+    <div class="tech-card"><div class="tech-icon">🧠</div><h3>Multilayer Perceptron (MLP)</h3><p>Deep learning model with 64→32→22 neuron architecture trained using Adam optimizer with categorical cross-entropy loss for multi-class crop classification.</p></div>
+    <div class="tech-card"><div class="tech-icon">🔒</div><h3>Federated Learning (Flower)</h3><p>Privacy-preserving distributed training using the Flower (flwr) framework with FedAvg aggregation across 3 independent client nodes.</p></div>
+    <div class="tech-card"><div class="tech-icon">🌐</div><h3>Flask Web Application</h3><p>Lightweight Python web framework providing REST API and user interface for real-time crop prediction, registration and login.</p></div>
+    <div class="tech-card"><div class="tech-icon">🗄️</div><h3>SQLite Database</h3><p>Lightweight embedded database storing user registrations permanently. No server required — data stored in a local users.db file.</p></div>
+    <div class="tech-card"><div class="tech-icon">🐍</div><h3>TensorFlow / Keras</h3><p>Backend deep learning framework for building, training and saving the MLP model with Adam optimizer and cross-entropy loss.</p></div>
+    <div class="tech-card"><div class="tech-icon">📈</div><h3>Scikit-Learn + Matplotlib</h3><p>Used for data preprocessing (StandardScaler, LabelEncoder) and generating performance metrics and visualization plots.</p></div>
+  </div>
+
+  <div class="section-label">Pipeline</div>
+  <h2>System Architecture</h2>
+  <div class="pipeline">
+    <div class="pipe-step"><div class="pipe-num">01</div><h4>Data Split</h4><p>2200 samples split into 3 client datasets</p></div>
+    <div class="pipe-step"><div class="pipe-num">02</div><h4>Preprocess</h4><p>StandardScaler + LabelEncoder</p></div>
+    <div class="pipe-step"><div class="pipe-num">03</div><h4>Local Train</h4><p>Each client trains MLP for 5 epochs</p></div>
+    <div class="pipe-step"><div class="pipe-num">04</div><h4>FedAvg</h4><p>Server averages weights from 3 clients</p></div>
+    <div class="pipe-step"><div class="pipe-num">05</div><h4>10 Rounds</h4><p>Repeated for 10 communication rounds</p></div>
+    <div class="pipe-step"><div class="pipe-num">06</div><h4>Predict</h4><p>Federated model used for live prediction</p></div>
+  </div>
+
+  <div class="section-label">Performance</div>
+  <h2>Model Metrics</h2>
+  <div class="metrics-grid">
+    <div class="metric-card"><div class="metric-val">98%+</div><div class="metric-label">FL Model Accuracy</div></div>
+    <div class="metric-card"><div class="metric-val">22</div><div class="metric-label">Crop Classes</div></div>
+    <div class="metric-card"><div class="metric-val">2200</div><div class="metric-label">Training Samples</div></div>
+    <div class="metric-card"><div class="metric-val">10</div><div class="metric-label">FL Rounds</div></div>
+  </div>
+
+  <div class="section-label">Dataset</div>
+  <h2>Input Features</h2>
+  <table>
+    <thead><tr><th>Feature</th><th>Description</th><th>Unit</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td><strong>N</strong></td><td>Nitrogen ratio in soil</td><td>kg/ha</td><td>90</td></tr>
+      <tr><td><strong>P</strong></td><td>Phosphorus ratio in soil</td><td>kg/ha</td><td>42</td></tr>
+      <tr><td><strong>K</strong></td><td>Potassium ratio in soil</td><td>kg/ha</td><td>43</td></tr>
+      <tr><td><strong>Temperature</strong></td><td>Average temperature</td><td>°C</td><td>20.87</td></tr>
+      <tr><td><strong>Humidity</strong></td><td>Relative humidity</td><td>%</td><td>82.00</td></tr>
+      <tr><td><strong>pH</strong></td><td>Soil acidity/alkalinity</td><td>0–14</td><td>6.50</td></tr>
+      <tr><td><strong>Rainfall</strong></td><td>Annual rainfall</td><td>mm</td><td>202.93</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<footer>© 2026 AgroIntel : Deep Learning Framework for Smart Crop Recommendation </footer>
+</body>
+</html>
