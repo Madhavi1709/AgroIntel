@@ -1,122 +1,194 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Result — AgroIntel</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
-  <style>
-    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-    :root{--green:#2d6a4f;--lime:#95d5b2;--gold:#d4a017;--dark:#1a1a2e}
-    body{font-family:'DM Sans',sans-serif;background:var(--dark);min-height:100vh;padding:3rem 2rem}
-    .container{max-width:940px;margin:0 auto;animation:fadeIn 0.6s ease both}
-    @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+import os
+# 1. Memory Optimization: Force CPU & suppress heavy logging
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-    /* ── Page Label ── */
-    .page-label{text-align:center;font-size:0.78rem;letter-spacing:2.5px;text-transform:uppercase;color:var(--lime);margin-bottom:2rem}
+import psycopg2
+import numpy as np
+import pandas as pd
+import joblib
+from flask import Flask, render_template, request, session, redirect, url_for
+from keras.models import load_model
+from crop_images import get_crop_image
 
-    /* ── Main Grid ── */
-    .main-grid{display:grid;grid-template-columns:1fr 1.4fr;gap:1.5rem;margin-bottom:1.5rem}
+# --- APP SETUP ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Ensure Flask knows exactly where the templates folder is
+app = Flask(__name__, template_folder=os.path.join(BASE_DIR, "templates"))
+app.secret_key = "agrointel_secret_key_2025"
 
-    /* ── Crop Visual Card ── */
-    .img-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 2rem;gap:1rem}
-    .crop-emoji{font-size:7rem;line-height:1;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.4));animation:bounce 1s ease 0.3s both}
-    @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
-    .crop-name{font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:#fff;text-transform:capitalize;text-align:center}
-    .accuracy-badge{display:inline-flex;align-items:center;gap:0.5rem;background:rgba(149,213,178,0.15);border:1px solid rgba(149,213,178,0.3);color:var(--lime);padding:0.4rem 1.1rem;border-radius:50px;font-size:0.78rem}
+# --- DATABASE CONFIG ---
+DATABASE_URL = os.environ.get(
+    "DATABASE_URL",
+    "postgresql://neondb_owner:npg_XzmcuGoLkw62@ep-summer-cell-anciiddp-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require"
+)
 
-    /* ── Info Card ── */
-    .info-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:2rem;display:flex;flex-direction:column;gap:1.2rem}
-    .info-title{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:#fff}
-    .info-text{font-size:0.88rem;color:rgba(255,255,255,0.6);line-height:1.75}
-    .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem}
-    .meta-item{background:rgba(255,255,255,0.05);border-radius:12px;padding:0.85rem 1rem}
-    .meta-label{font-size:0.68rem;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-bottom:0.3rem}
-    .meta-value{font-size:0.92rem;font-weight:600;color:#fff}
+def get_connection():
+    return psycopg2.connect(DATABASE_URL)
 
-    /* ── Input Summary ── */
-    .summary-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:1.8rem;margin-bottom:1.5rem}
-    .summary-title{font-family:'Playfair Display',serif;font-size:1rem;color:#fff;font-weight:700;margin-bottom:1.2rem}
-    .params-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:0.8rem}
-    .param{background:rgba(255,255,255,0.05);border-radius:12px;padding:0.75rem 0.5rem;text-align:center}
-    .param-val{font-size:1rem;font-weight:700;color:var(--lime);font-family:'Playfair Display',serif}
-    .param-label{font-size:0.65rem;color:rgba(255,255,255,0.35);margin-top:0.2rem;text-transform:uppercase;letter-spacing:0.5px}
+# --- LOAD ML ASSETS ---
+# Columns must match your 'About' page and training data exactly
+FEATURES = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
 
-    /* ── Actions ── */
-    .actions{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
-    .btn-primary{background:var(--green);color:#fff;padding:0.85rem 2rem;border-radius:50px;text-decoration:none;font-weight:500;font-size:0.95rem;transition:all 0.25s;box-shadow:0 4px 20px rgba(45,106,79,0.4)}
-    .btn-primary:hover{background:#1b4332;transform:translateY(-2px)}
-    .btn-outline{border:2px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.7);padding:0.85rem 2rem;border-radius:50px;text-decoration:none;font-weight:500;font-size:0.95rem;transition:all 0.25s}
-    .btn-outline:hover{border-color:#fff;color:#fff}
+fed_model_path = os.path.join(BASE_DIR, "federated_mlp_model.h5")
+if os.path.exists(fed_model_path):
+    model = load_model(fed_model_path)
+else:
+    model = load_model(os.path.join(BASE_DIR, "centralized_mlp_model.h5"))
 
-    @media(max-width:700px){
-      .main-grid{grid-template-columns:1fr}
-      .params-grid{grid-template-columns:repeat(3,1fr)}
-    }
-  </style>
-</head>
-<body>
-<div class="container">
+# Paths match your 'processed_data' folder
+scaler  = joblib.load(os.path.join(BASE_DIR, "processed_data", "scaler.pkl"))
+encoder = joblib.load(os.path.join(BASE_DIR, "processed_data", "label_encoder.pkl"))
 
-  <!-- Simple top label -->
-  <div class="page-label">🌾 Crop Recommendation Result</div>
+# --- CROP INFO DICTIONARY ---
+# This supplies the extra data your 'result.html' expects
+CROP_INFO = {
+    "rice": {"emoji": "🌾", "season": "Kharif", "water": "High", "duration": "120-150 days", "soil": "Clayey", "info": "Rice is a staple food crop grown in flooded paddies."},
+    "maize": {"emoji": "🌽", "season": "Kharif", "water": "Medium", "duration": "80-110 days", "soil": "Loamy", "info": "Maize thrives in warm weather."},
+    "chickpea": {"emoji": "🫘", "season": "Rabi", "water": "Low", "duration": "90-120 days", "soil": "Sandy Loam", "info": "Chickpea grows well in cool, dry climates."},
+    "kidneybeans": {"emoji": "🫘", "season": "Kharif", "water": "Medium", "duration": "60-70 days", "soil": "Loamy", "info": "Rich in protein and highly nutritious."},
+    "pigeonpeas": {"emoji": "🫘", "season": "Kharif", "water": "Low", "duration": "150-180 days", "soil": "Alluvial", "info": "Drought tolerant legume."},
+    "mothbeans": {"emoji": "🫘", "season": "Kharif", "water": "Very Low", "duration": "70-90 days", "soil": "Sandy", "info": "Grown in arid regions."},
+    "mungbean": {"emoji": "🫘", "season": "Summer", "water": "Low", "duration": "60-70 days", "soil": "Loamy", "info": "Short duration pulse crop."},
+    "blackgram": {"emoji": "🫘", "season": "Kharif", "water": "Low", "duration": "80-90 days", "soil": "Loamy", "info": "Commonly used in South Asian cuisine."},
+    "lentil": {"emoji": "🫘", "season": "Rabi", "water": "Low", "duration": "110-130 days", "soil": "Loamy", "info": "Cool season pulse crop."},
+    "pomegranate": {"emoji": "🍎", "season": "Year-round", "water": "Medium", "duration": "5-7 months", "soil": "Alluvial", "info": "Fruit rich in antioxidants."},
+    "banana": {"emoji": "🍌", "season": "Year-round", "water": "High", "duration": "10-12 months", "soil": "Alluvial", "info": "Tropical fruit crop."},
+    "mango": {"emoji": "🥭", "season": "Summer", "water": "Medium", "duration": "100-150 days", "soil": "Alluvial", "info": "The king of fruits."},
+    "grapes": {"emoji": "🍇", "season": "Winter", "water": "Medium", "duration": "150-170 days", "soil": "Loamy", "info": "Used for fruit and wine."},
+    "watermelon": {"emoji": "🍉", "season": "Summer", "water": "Medium", "duration": "80-100 days", "soil": "Sandy", "info": "Hydrating summer fruit."},
+    "muskmelon": {"emoji": "🍈", "season": "Summer", "water": "Medium", "duration": "70-90 days", "soil": "Sandy", "info": "Sweet summer melon."},
+    "apple": {"emoji": "🍎", "season": "Winter", "water": "Medium", "duration": "130-150 days", "soil": "Loamy", "info": "Grown in temperate climates."},
+    "orange": {"emoji": "🍊", "season": "Winter", "water": "Medium", "duration": "6-8 months", "soil": "Loamy", "info": "Citrus fruit rich in Vitamin C."},
+    "papaya": {"emoji": "🥭", "season": "Year-round", "water": "Medium", "duration": "7-9 months", "soil": "Alluvial", "info": "Fast-growing tropical fruit."},
+    "coconut": {"emoji": "🥥", "season": "Year-round", "water": "High", "duration": "12 months", "soil": "Sandy", "info": "Grown in coastal regions."},
+    "cotton": {"emoji": "☁️", "season": "Kharif", "water": "Medium", "duration": "160-180 days", "soil": "Black Soil", "info": "Major fiber crop."},
+    "jute": {"emoji": "🌱", "season": "Kharif", "water": "High", "duration": "120-150 days", "soil": "Alluvial", "info": "Known as the golden fiber."},
+    "coffee": {"emoji": "☕", "season": "Winter", "water": "High", "duration": "7-9 months", "soil": "Laterite", "info": "Grown in hilly regions."}
+}
 
-  <!-- Main Grid: Visual + Info -->
-  <div class="main-grid">
+# --- ROUTES ---
 
-    <!-- Left: Crop Visual -->
-    <div class="img-card">
-      <div class="crop-emoji">{{ emoji }}</div>
-      <div class="crop-name">{{ prediction }}</div>
-      <div class="accuracy-badge">✅ 98% Accuracy · Federated MLP</div>
-    </div>
+@app.route("/")
+def home():
+    return render_template("home.html")
 
-    <!-- Right: Crop Info -->
-    <div class="info-card">
-      <div class="info-title">About {{ prediction | capitalize }}</div>
-      <div class="info-text">{{ crop_info }}</div>
-      <div class="meta-grid">
-        <div class="meta-item">
-          <div class="meta-label">🌦️ Season</div>
-          <div class="meta-value">{{ season }}</div>
-        </div>
-        <div class="meta-item">
-          <div class="meta-label">💧 Water Need</div>
-          <div class="meta-value">{{ water }}</div>
-        </div>
-        <div class="meta-item">
-          <div class="meta-label">⏱️ Duration</div>
-          <div class="meta-value">{{ duration }}</div>
-        </div>
-        <div class="meta-item">
-          <div class="meta-label">🪨 Soil Type</div>
-          <div class="meta-value">{{ soil }}</div>
-        </div>
-      </div>
-    </div>
+@app.route("/about")
+def about():
+    return render_template("about.html")
 
-  </div>
+@app.route("/login")
+def login():
+    return render_template("login.html")
 
-  <!-- Input Summary -->
-  <div class="summary-card">
-    <div class="summary-title">📊 Your Input Parameters</div>
-    <div class="params-grid">
-      <div class="param"><div class="param-val">{{ N }}</div><div class="param-label">N</div></div>
-      <div class="param"><div class="param-val">{{ P }}</div><div class="param-label">P</div></div>
-      <div class="param"><div class="param-val">{{ K }}</div><div class="param-label">K</div></div>
-      <div class="param"><div class="param-val">{{ temperature }}°</div><div class="param-label">Temp</div></div>
-      <div class="param"><div class="param-val">{{ humidity }}%</div><div class="param-label">Humidity</div></div>
-      <div class="param"><div class="param-val">{{ ph }}</div><div class="param-label">pH</div></div>
-      <div class="param"><div class="param-val">{{ rainfall }}</div><div class="param-label">Rainfall</div></div>
-    </div>
-  </div>
+@app.route("/register")
+def register():
+    return render_template("register.html")
 
-  <!-- Action Buttons -->
-  <div class="actions">
-    <a href="/prediction" class="btn-primary">🔄 Try Another Prediction</a>
-    <a href="/index" class="btn-outline">← Back to Dashboard</a>
-  </div>
+@app.route("/index")
+def index():
+    if "username" not in session:
+        return redirect(url_for("login"))
+    return render_template("index.html", username=session.get("username"), name=session.get("name"))
 
-</div>
-</body>
-</html>
+@app.route("/prediction")
+def prediction_page():
+    if "username" not in session:
+        return redirect(url_for("login"))
+    return render_template("prediction.html")
+
+# --- AUTH LOGIC ---
+
+@app.route("/register_user", methods=["POST"])
+def register_user():
+    try:
+        name = request.form.get("name")
+        username = request.form.get("username")
+        mobile = request.form.get("mobile")
+        password = request.form.get("password")
+        city = request.form.get("city")
+        state = request.form.get("state")
+        
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO users (name, username, mobile, password, city, state) VALUES (%s,%s,%s,%s,%s,%s)",
+            (name, username, mobile, password, city, state)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        return render_template("login.html", register_success=True)
+    except Exception as e:
+        return render_template("register.html", error=f"Registration failed: {str(e)}")
+
+@app.route("/login_user", methods=["POST"])
+def login_user():
+    username = request.form.get("username")
+    password = request.form.get("password")
+    
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT name, password FROM users WHERE username = %s", (username,))
+    user = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    if user and user[1] == password:
+        session["username"] = username
+        session["name"] = user[0]
+        return redirect(url_for("index"))
+    else:
+        return render_template("login.html", login_error=True)
+
+# --- PREDICTION LOGIC ---
+
+@app.route("/predict", methods=["POST"])
+def predict():
+    if "username" not in session:
+        return redirect(url_for("login"))
+    try:
+        # Get raw form data
+        n = float(request.form["N"])
+        p = float(request.form["P"])
+        k = float(request.form["K"])
+        temp = float(request.form["temperature"])
+        hum = float(request.form["humidity"])
+        ph = float(request.form["ph"])
+        rain = float(request.form["rainfall"])
+
+        # Create DataFrame with names to satisfy the scaler
+        input_df = pd.DataFrame([[n, p, k, temp, hum, ph, rain]], columns=FEATURES)
+        
+        # Scale and Predict
+        scaled_data = scaler.transform(input_df)
+        prediction = model.predict(scaled_data)
+        crop_name = encoder.inverse_transform([np.argmax(prediction)])[0]
+
+        # Get visual and text info
+        crop_key = crop_name.lower().replace(" ", "")
+        info = CROP_INFO.get(crop_key, {"emoji": "🌱", "season": "Varies", "water": "Medium", "duration": "Varies", "soil": "Varies", "info": "Recommended crop."})
+        img_data = get_crop_image(crop_name)
+
+        return render_template("result.html",
+                               prediction=crop_name,
+                               emoji=info["emoji"],
+                               season=info["season"],
+                               water=info["water"],
+                               duration=info["duration"],
+                               soil=info["soil"],
+                               crop_info=info["info"],
+                               image_url=img_data["image_url"],
+                               N=n, P=p, K=k, temperature=temp, 
+                               humidity=hum, ph=ph, rainfall=rain)
+    except Exception as e:
+        return render_template("prediction.html", error=f"Prediction Error: {str(e)}")
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("home"))
+
+if __name__ == "__main__":
+    # Render assigns a port via environment variable
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
