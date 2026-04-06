@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Result — AgroIntel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{--green:#2d6a4f;--lime:#95d5b2;--gold:#d4a017;--dark:#1a1a2e}
+    body{font-family:'DM Sans',sans-serif;background:var(--dark);min-height:100vh;padding:3rem 2rem}
+    .container{max-width:940px;margin:0 auto;animation:fadeIn 0.6s ease both}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+    .page-label{text-align:center;font-size:0.78rem;letter-spacing:2.5px;text-transform:uppercase;color:var(--lime);margin-bottom:2rem}
+
+    /* ── Main Grid ── */
+    .main-grid{display:grid;grid-template-columns:1fr 1.4fr;gap:1.5rem;margin-bottom:1.5rem}
+
+    /* ── Crop Visual Card ── */
+    .img-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 2rem;gap:1rem}
+    .crop-emoji{font-size:7rem;line-height:1;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.4));animation:bounce 1s ease 0.3s both}
+    @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+    .crop-name{font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:#fff;text-transform:capitalize;text-align:center}
+    .accuracy-badge{display:inline-flex;align-items:center;gap:0.5rem;background:rgba(149,213,178,0.15);border:1px solid rgba(149,213,178,0.3);color:var(--lime);padding:0.4rem 1.1rem;border-radius:50px;font-size:0.78rem}
+
+    /* ── Info Card ── */
+    .info-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:2rem;display:flex;flex-direction:column;gap:1.2rem}
+    .info-title{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:#fff}
+    .info-text{font-size:0.88rem;color:rgba(255,255,255,0.6);line-height:1.75}
+    .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem}
+    .meta-item{background:rgba(255,255,255,0.05);border-radius:12px;padding:0.85rem 1rem}
+    .meta-label{font-size:0.68rem;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-bottom:0.3rem}
+    .meta-value{font-size:0.92rem;font-weight:600;color:#fff}
+
+    /* ── Input Summary ── */
+    .summary-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:1.8rem;margin-bottom:1.5rem}
+    .summary-title{font-family:'Playfair Display',serif;font-size:1rem;color:#fff;font-weight:700;margin-bottom:1.2rem}
+    .params-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:0.8rem}
+    .param{background:rgba(255,255,255,0.05);border-radius:12px;padding:0.75rem 0.5rem;text-align:center}
+    .param-val{font-size:1rem;font-weight:700;color:var(--lime);font-family:'Playfair Display',serif}
+    .param-label{font-size:0.65rem;color:rgba(255,255,255,0.35);margin-top:0.2rem;text-transform:uppercase;letter-spacing:0.5px}
+
+    /* ── Actions ── */
+    .actions{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+    .btn-primary{background:var(--green);color:#fff;padding:0.85rem 2rem;border-radius:50px;text-decoration:none;font-weight:500;font-size:0.95rem;transition:all 0.25s;box-shadow:0 4px 20px rgba(45,106,79,0.4)}
+    .btn-primary:hover{background:#1b4332;transform:translateY(-2px)}
+    .btn-outline{border:2px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.7);padding:0.85rem 2rem;border-radius:50px;text-decoration:none;font-weight:500;font-size:0.95rem;transition:all 0.25s}
+    .btn-outline:hover{border-color:#fff;color:#fff}
+
+    @media(max-width:700px){
+      .main-grid{grid-template-columns:1fr}
+      .params-grid{grid-template-columns:repeat(3,1fr)}
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-label">🌾 Crop Recommendation Result</div>
+
+  <div class="main-grid">
+
+    <!-- Left: Crop Visual -->
+    <div class="img-card">
+      <div class="crop-emoji">{{ emoji }}</div>
+      <div class="crop-name">{{ prediction }}</div>
+      <div class="accuracy-badge">✅ 98% Accuracy · Federated MLP</div>
+    </div>
+
+    <!-- Right: Crop Info -->
+    <div class="info-card">
+      <div class="info-title">About {{ prediction | capitalize }}</div>
+      <div class="info-text">{{ crop_info }}</div>
+      <div class="meta-grid">
+        <div class="meta-item">
+          <div class="meta-label">🌦️ Season</div>
+          <div class="meta-value">{{ season }}</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">💧 Water Need</div>
+          <div class="meta-value">{{ water }}</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">⏱️ Duration</div>
+          <div class="meta-value">{{ duration }}</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">🪨 Soil Type</div>
+          <div class="meta-value">{{ soil }}</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Input Summary -->
+  <div class="summary-card">
+    <div class="summary-title">📊 Your Input Parameters</div>
+    <div class="params-grid">
+      <div class="param"><div class="param-val">{{ N }}</div><div class="param-label">N</div></div>
+      <div class="param"><div class="param-val">{{ P }}</div><div class="param-label">P</div></div>
+      <div class="param"><div class="param-val">{{ K }}</div><div class="param-label">K</div></div>
+      <div class="param"><div class="param-val">{{ temperature }}°</div><div class="param-label">Temp</div></div>
+      <div class="param"><div class="param-val">{{ humidity }}%</div><div class="param-label">Humidity</div></div>
+      <div class="param"><div class="param-val">{{ ph }}</div><div class="param-label">pH</div></div>
+      <div class="param"><div class="param-val">{{ rainfall }}</div><div class="param-label">Rainfall</div></div>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="actions">
+    <a href="/prediction" class="btn-primary">🔄 Try Another Prediction</a>
+    <a href="/index" class="btn-outline">← Back to Dashboard</a>
+  </div>
+
+</div>
+</body>
+</html>
